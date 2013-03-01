@@ -201,7 +201,7 @@ EOF
 fi
 
 #
-# Checkout Source if it's not there 
+# Checkout Source if it's not there
 #
 if [ -z "${CURRENT_SVN_REVISION}" ]; then
 	mail_notify "Initially checking out sources..."
@@ -246,9 +246,9 @@ if [ $BUILD == "YES" ]; then
 	mail_notify "Kernel Build completed"
 	make -C $SRCROOT MALLOC_PRODUCTION=yes buildworld
 	mail_notify "World Build completed"
-	
+
 	buildenv=$(make -C $SRCROOT buildenvvars)
-	
+
 	eval $buildenv make -C $SRCROOT/sys/boot clean
 	eval $buildenv make -C $SRCROOT/sys/boot obj
 	eval $buildenv make -C $SRCROOT/sys/boot UBLDR_LOADADDR=0x2000000 all
@@ -352,7 +352,7 @@ __EOTTYS__
 
 # Add Ports
 if [ $WITHPORTS == "YES" ]; then
-	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
+	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract
 fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
