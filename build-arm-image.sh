@@ -204,6 +204,7 @@ fi
 # Checkout Source if it's not there 
 #
 if [ -z "${CURRENT_SVN_REVISION}" ]; then
+	mail_notify "Initially checking out sources..."
 	SVN_CHECKOUT="YES"
 	cd $SRCROOT
 	svn co svn://svn.freebsd.org/base/head/ ./
@@ -214,6 +215,7 @@ fi
 # Update Source
 #
 if [ $SVN_UPDATE == "YES" ]; then
+	mail_notify "Updating sources..."
 	cd $SRCROOT
 	svn up
 	cd $curdir
