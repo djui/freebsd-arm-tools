@@ -4,35 +4,40 @@ set -e
 #
 # Defaults
 #
-PREFLIGHT='YES'
+PREFLIGHT="YES"
 IMG_SIZE=1
 IMG_SWAP_SIZE=0
 GPU_MEM_SIZE=128
-SVN_CHECKOUT=''
-SVN_UPDATE='NO'
-BUILD='YES'
-NOTIFY='NO'
-WITHPORTS='NO'
+SVN_CHECKOUT=""
+SVN_UPDATE="NO"
+BUILD="YES"
+NOTIFY="NO"
+WITHPORTS="NO"
 
 #
 # Usage Message
 #
 usage() {
-	echo "
+    cat <<EOF
+Usage: $(basename $0) [OPTION]...
 
-	Usage: # ${0} [options]
+Options:
+  -u  Update source via svn before build (default: no)
+  -b  No build, just create image from previously-built source (default: yes)
+  -p  Install the ports tree (default: no)
+  -s  Disk size in GB; add M for MB (default: 1)
+  -w  Swap space size in MB; 0 avoids creating swap space (default: 0)
+  -g  GPU Mem size in MB; must be 32,64,128 (default: 128)
+  -m  Email address to notify during image creation process (default: none)
+  -q  Quiet, no pre-flight check
+  -h  Show usage screen
+EOF
+}
 
-		-b No build, just create image from previously-built source
-		-g GPU Mem Size in MB, must be 32,64,128 (?)
-		-h This help
-		-m Email address to notify
-		-p Install the ports tree
-		-q Quiet, no pre-flight check
-		-s Image size.  Default value 1, default unit GB, add M for MB.
-		-u Update source via svn before build
-		-w Swap size in MB, default no swap (0)
-		
-		"
+mail_notify() {
+	if [ ! $NOTIFY == "NO" ]; then
+	    echo $(date "+%F %r") | mail -s "${IMG_NAME}: $1" $NOTIFY
+	fi
 }
 
 #
@@ -41,7 +46,7 @@ usage() {
 while getopts ":bg:hm:pqs:uw:" opt; do
 	case $opt in
 		b)
-			BUILD='NO'
+			BUILD="NO"
 			;;
 		g)
 			GPU_MEM_SIZE=$OPTARG
@@ -54,16 +59,16 @@ while getopts ":bg:hm:pqs:uw:" opt; do
 			NOTIFY=$OPTARG
 			;;
 		p)
-			WITHPORTS='YES'
+			WITHPORTS="YES"
 			;;
 		q)
-			PREFLIGHT=''
+			PREFLIGHT=""
 			;;
 		s)
 			IMG_SIZE=$OPTARG
 			;;
 		u)
-			SVN_UPDATE='YES'
+			SVN_UPDATE="YES"
 			;;
 		w)
 			IMG_SWAP_SIZE=$OPTARG
@@ -83,15 +88,15 @@ shift $((OPTIND-1))
 #
 # Root Check
 #
-if [ `whoami` != "root" ]; then
-        echo 'Please run me as root.'
-        exit
+if [ $(id -u) != 0 ]; then
+    echo "Please run me as root." >&2
+    exit 1
 fi
 
 #
-# 	Setup
+# Setup
 #
-curdir=`pwd`
+curdir=$(pwd)
 export GPU_MEM=$GPU_MEM_SIZE
 export PI_USER=pi
 export PI_USER_PASSWORD=raspberry
@@ -103,29 +108,28 @@ export IMG=$MAKEOBJDIRPREFIX/bsd-pi.img
 export TARGET_ARCH=armv6
 export MAKESYSPATH=$SRCROOT/share/mk
 export KERNCONF=RPI-B
-KERNEL=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/kernel
-UBLDR=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/boot/arm/uboot/ubldr
-DTB=`realpath $MAKEOBJDIRPREFIX`/arm.armv6/`realpath $SRCROOT`/sys/$KERNCONF/bcm2835-rpi-b.dtb
+export UBLDRSRC=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
+UBLDR=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/boot/arm/uboot/ubldr
+DTB=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/$KERNCONF/bcm2835-rpi-b.dtb
 
 #
-#	Image Size Setup
+# Image Size Setup
 #
 IMG_SIZE_UNITS=$( echo $IMG_SIZE | cut -c ${#IMG_SIZE} )
-if [ $IMG_SIZE_UNITS == 'M' -o $IMG_SIZE_UNITS == 'm' ]; then
-	IMG_SIZE_COUNT=$( echo $IMG_SIZE | sed 's/m//' | sed 's/M//' )
+if [ $IMG_SIZE_UNITS == "M" -o $IMG_SIZE_UNITS == "m" ]; then
+	IMG_SIZE_COUNT=$( echo $IMG_SIZE | sed "s/m//" | sed "s/M//" )
 else
 	IMG_SIZE_COUNT=$(( $IMG_SIZE * 1024 ))
 	IMG_SIZE=${IMG_SIZE}GB
 fi
 IMG_FBSD_SIZE=$(( ( $IMG_SIZE_COUNT ) - 32 - $IMG_SWAP_SIZE - 2 ))
 
-
 #
 # Sanity Checks
 #
 if [ -z "$MNTDIR" ]; then
-echo "MNTDIR is not set properly"
-exit 1
+    echo "MNTDIR is not set properly" >&2
+    exit 1
 fi
 
 #
@@ -135,26 +139,26 @@ if [ ! -d $SRCROOT ]; then
 	echo -n "Creating SRCROOT: ${SRCROOT}..."
 	mkdir -p $SRCROOT
 	if [ ! -d $SRCROOT ]; then
-		echo 'FAIL'
-		exit
+		echo "FAIL" >&2
+		exit 1
 	fi
-	echo 'OK'
+	echo "OK"
 fi
 if [ ! -d ${MAKEOBJDIRPREFIX} ]; then
 	echo -n "Creating MAKEOBJDIRPREFIX: ${MAKEOBJDIRPREFIX}..."
 	mkdir -p ${SRCROOT}
 	if [ ! -d ${SRCROOT} ]; then
-		echo 'FAIL'
-		exit
+		echo "FAIL" >&2
+		exit 1
 	fi
-	echo 'OK'
+	echo "OK"
 fi
 
 #
 # Get SVN Revision
 #
 cd $SRCROOT
-CURRENT_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
+CURRENT_SVN_REVISION=$(svn info |grep "^Revision" | awk "{print $2}")
 cd $curdir
 
 #
@@ -162,102 +166,92 @@ cd $curdir
 #
 IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
 
-
 #
 # Pre-Flight Confirmation
 #
 if [ $PREFLIGHT ]; then
-	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-	echo "-=-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-=-"
-	echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-	echo "CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}"
-	echo "            IMG_NAME: ${IMG_NAME}"
-	echo "            IMG_SIZE: $IMG_SIZE"
-	echo "      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
-	echo "       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
-	echo "       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
-	echo "             GPU_MEM: $GPU_MEM"
-	echo "             PI_USER: $PI_USER"
-	echo "    PI_USER_PASSWORD: $PI_USER_PASSWORD"
-	echo "              NOTIFY: $NOTIFY"
-	echo "       SOURCE UPDATE: $SVN_UPDATE"
-	echo "               BUILD: $BUILD"
-	echo "       INSTALL PORTS: $WITHPORTS"
-	echo "              MNTDIR: $MNTDIR"
-	echo "             SRCROOT: $SRCROOT"
-	echo "         MAKESYSPATH: $MAKESYSPATH"
-	echo "    MAKEOBJDIRPREFIX: $MAKEOBJDIRPREFIX"
-	echo "                 IMG: $IMG"
-	echo "         TARGET_ARCH: $TARGET_ARCH"
-	echo "            KERNCONF: $KERNCONF"
-	echo "              KERNEL: $KERNEL"
-	echo "               UBLDR: $UBLDR"
-	echo "                 DTB: $DTB"
-	echo ' '
-	echo -n '			[ CRTL-C to cancel, or ENTER... ]'
+    cat <<EOF
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+-=-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-=-"
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}"
+            IMG_NAME: ${IMG_NAME}"
+            IMG_SIZE: $IMG_SIZE"
+      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
+       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
+       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
+             GPU_MEM: $GPU_MEM"
+             PI_USER: $PI_USER"
+    PI_USER_PASSWORD: $PI_USER_PASSWORD"
+              NOTIFY: $NOTIFY"
+       SOURCE UPDATE: $SVN_UPDATE"
+               BUILD: $BUILD"
+       INSTALL PORTS: $WITHPORTS"
+              MNTDIR: $MNTDIR"
+             SRCROOT: $SRCROOT"
+         MAKESYSPATH: $MAKESYSPATH"
+    MAKEOBJDIRPREFIX: $MAKEOBJDIRPREFIX"
+                 IMG: $IMG"
+         TARGET_ARCH: $TARGET_ARCH"
+            KERNCONF: $KERNCONF"
+               UBLDR: $UBLDR"
+                 DTB: $DTB"
+
+  [ CRTL-C to cancel, or ENTER to continue... ]
+EOF
 	read x < /dev/tty
 fi
 
 #
-#		Checkout Source If It's Not There 
+# Checkout Source if it's not there 
 #
 if [ -z "${CURRENT_SVN_REVISION}" ]; then
-	SVN_CHECKOUT='YES'
+	SVN_CHECKOUT="YES"
 	cd $SRCROOT
 	svn co svn://svn.freebsd.org/base/head/ ./
 	cd $curdir
 fi
 
 #
-#		Update Source
+# Update Source
 #
-if [ $SVN_UPDATE == 'YES' ]; then
+if [ $SVN_UPDATE == "YES" ]; then
 	cd $SRCROOT
 	svn up
 	cd $curdir
 fi
 
 #
-#	Get SVN Revision (Again)
+# Get SVN Revision (Again)
 #
 cd $SRCROOT
-NEW_SVN_REVISION=$(svn info |grep '^Revision' | awk '{print $2}')
+NEW_SVN_REVISION=$(svn info |grep "^Revision" | awk "{print $2}")
 cd $curdir
 
 if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
 	#
-	#       Update To New Image Filename
+	# Update To New Image Filename
 	#
 	IMG_NAME="FreeBSD-HEAD-r${NEW_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
-	if [ ! $NOTIFY == 'NO' ]; then
-	        echo `date "+%F %r"` | mail -s "Source checkout / update complete, new name: ${IMG_NAME}" $NOTIFY
-	fi
+    mail_notify "Source checkout / update complete"
 fi
 
 #
 # Build From Source
 #
-if [ $BUILD == 'YES' ]; then
-	
+if [ $BUILD == "YES" ]; then
 	make -C $SRCROOT kernel-toolchain
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel ToolChain Build Complete" $NOTIFY
-	fi
+	mail_notify "Kernel Toolchain Build completed"
 	make -C $SRCROOT KERNCONF=$KERNCONF WITH_FDT=yes buildkernel
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: Kernel Build Complete" $NOTIFY
-	fi
+	mail_notify "Kernel Build completed"
 	make -C $SRCROOT MALLOC_PRODUCTION=yes buildworld
-	if [ ! $NOTIFY == 'NO' ]; then
-		echo `date "+%F %r"` | mail -s "${IMG_NAME}: World Build Complete" $NOTIFY
-	fi
+	mail_notify "World Build completed"
 	
-	buildenv=`make -C $SRCROOT buildenvvars`
+	buildenv=$(make -C $SRCROOT buildenvvars)
 	
 	eval $buildenv make -C $SRCROOT/sys/boot clean
 	eval $buildenv make -C $SRCROOT/sys/boot obj
 	eval $buildenv make -C $SRCROOT/sys/boot UBLDR_LOADADDR=0x2000000 all
-
 fi
 
 #
@@ -268,15 +262,16 @@ if [ $PREFLIGHT ]; then
 fi
 rm -f $IMG
 dd if=/dev/zero of=$IMG bs=1M count=$IMG_SIZE_COUNT
-MDFILE=`mdconfig -a -f $IMG`
+MDFILE=$(mdconfig -a -f $IMG)
 gpart create -s MBR ${MDFILE}
 
+
 # Boot partition
-gpart add -s 32m -t '!12' ${MDFILE}
+gpart add -s 32m -t "!12" ${MDFILE}
 gpart set -a active -i 1 ${MDFILE}
 newfs_msdos -L boot -F 16 /dev/${MDFILE}s1
 mount_msdosfs /dev/${MDFILE}s1 $MNTDIR
-fetch -q -o - http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz | tar -x -v -z -C $MNTDIR -f -
+fetch -q -o - $UBLDRSRC | tar -x -v -z -C $MNTDIR -f -
 
 cat >> $MNTDIR/config.txt <<__EOC__
 gpu_mem=$GPU_MEM
@@ -308,11 +303,7 @@ tunefs -n enable /dev/${MDFILE}s2a
 tunefs -j enable -S 4194304 /dev/${MDFILE}s2a
 # Turn on NFSv4 ACLs
 tunefs -N enable /dev/${MDFILE}s2a
-if [ ! $NOTIFY == 'NO' ]; then
-	echo "Done."
-fi
-
-
+mail_notify "Partitions created"
 
 mount /dev/${MDFILE}s2a $MNTDIR
 
@@ -323,14 +314,14 @@ make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installkernel
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC installworld
 make -C $SRCROOT DESTDIR=$MNTDIR -DDB_FROM_SRC distribution
 
-echo 'fdt addr 0x100' > $MNTDIR/boot/loader.rc
+echo "fdt addr 0x100" > $MNTDIR/boot/loader.rc
 
 #
 # Populate fstab with freebsd slice and optional swap slice
 #
-echo '/dev/mmcsd0s2a / ufs rw,noatime 1 1' > $MNTDIR/etc/fstab
+echo "/dev/mmcsd0s2a / ufs rw,noatime 1 1" > $MNTDIR/etc/fstab
 if [ $IMG_SWAP_SIZE -gt 0 ]; then
-	echo '/dev/mmcsd0s2b none swap sw 0 0' >> $MNTDIR/etc/fstab
+	echo "/dev/mmcsd0s2b none swap sw 0 0" >> $MNTDIR/etc/fstab
 fi
 
 # Populate /etc/rc.conf
@@ -358,24 +349,21 @@ ttyu0 "/usr/libexec/getty 3wire.115200" dialup on secure
 __EOTTYS__
 
 # Add Ports
-if [ $WITHPORTS == 'YES' ]; then
+if [ $WITHPORTS == "YES" ]; then
 	portsnap -f $MNTDIR/etc/portsnap.conf -p $MNTDIR/usr/ports -d $MNTDIR/var/db/portsnap fetch extract 
 fi
 
 echo $PI_USER_PASSWORD | pw -V $MNTDIR/etc useradd -h 0 -n $PI_USER -c "Raspberry Pi User" -s /bin/csh -m
 pw -V $MNTDIR/etc groupmod wheel -m $PI_USER
-PI_USER_UID=`pw -V $MNTDIR/etc usershow $PI_USER | cut -f 3 -d :`
-PI_USER_GID=`pw -V $MNTDIR/etc usershow $PI_USER | cut -f 4 -d :`
+PI_USER_UID=$(pw -V $MNTDIR/etc usershow $PI_USER | cut -f 3 -d :)
+PI_USER_GID=$(pw -V $MNTDIR/etc usershow $PI_USER | cut -f 4 -d :)
 mkdir -p $MNTDIR/home/$PI_USER
 chown $PI_USER_UID:$PI_USER_GID $MNTDIR/home/$PI_USER
 
 umount $MNTDIR
 mdconfig -d -u $MDFILE
 
-
-if [ ! $NOTIFY == 'NO' ]; then
-	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Install Complete" $NOTIFY
-fi
+mail_notify "Installation completed"
 
 #
 # Move the image into the current dir, create checksum and tar it up
@@ -389,9 +377,6 @@ shasum -a256 $IMG_NAME > $IMG_NAME.sha256.txt
 tar -cvzf $IMG_NAME.tgz $IMG_NAME*
 
 # Clean Up
-rm $IMG_NAME
-rm $IMG_NAME.sha256.txt
+rm $IMG_NAME $IMG_NAME.sha256.txt
 
-if [ ! $NOTIFY == 'NO' ]; then
-	echo `date "+%F %r"` | mail -s "${IMG_NAME}: Image Ready" $NOTIFY
-fi
+mail_notify "Image ready"
