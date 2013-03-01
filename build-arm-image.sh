@@ -169,31 +169,31 @@ IMG_NAME="FreeBSD-HEAD-r${CURRENT_SVN_REVISION}-ARMv6-${IMG_SIZE}.img"
 #
 if [ $PREFLIGHT ]; then
     cat <<EOF
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
--=-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-=-"
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}"
-            IMG_NAME: ${IMG_NAME}"
-            IMG_SIZE: $IMG_SIZE"
-      IMG_SIZE_COUNT: $IMG_SIZE_COUNT"
-       IMG_SWAP_SIZE: $IMG_SWAP_SIZE"
-       IMG_FBSD_SIZE: $IMG_FBSD_SIZE"
-             GPU_MEM: $GPU_MEM"
-             PI_USER: $PI_USER"
-    PI_USER_PASSWORD: $PI_USER_PASSWORD"
-              NOTIFY: $NOTIFY"
-       SOURCE UPDATE: $SVN_UPDATE"
-               BUILD: $BUILD"
-       INSTALL PORTS: $WITHPORTS"
-              MNTDIR: $MNTDIR"
-             SRCROOT: $SRCROOT"
-         MAKESYSPATH: $MAKESYSPATH"
-    MAKEOBJDIRPREFIX: $MAKEOBJDIRPREFIX"
-                 IMG: $IMG"
-         TARGET_ARCH: $TARGET_ARCH"
-            KERNCONF: $KERNCONF"
-               UBLDR: $UBLDR"
-                 DTB: $DTB"
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-=-=-=-=-=-=-=- PREFLIGHT CHECK -=-=-=-=-=-=-=-
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+CURRENT_SVN_REVISION: ${CURRENT_SVN_REVISION}
+            IMG_NAME: ${IMG_NAME}
+            IMG_SIZE: $IMG_SIZE
+      IMG_SIZE_COUNT: $IMG_SIZE_COUNT
+       IMG_SWAP_SIZE: $IMG_SWAP_SIZE
+       IMG_FBSD_SIZE: $IMG_FBSD_SIZE
+             GPU_MEM: $GPU_MEM
+             PI_USER: $PI_USER
+    PI_USER_PASSWORD: $PI_USER_PASSWORD
+              NOTIFY: $NOTIFY
+       SOURCE UPDATE: $SVN_UPDATE
+               BUILD: $BUILD
+       INSTALL PORTS: $WITHPORTS
+              MNTDIR: $MNTDIR
+             SRCROOT: $SRCROOT
+         MAKESYSPATH: $MAKESYSPATH
+    MAKEOBJDIRPREFIX: $MAKEOBJDIRPREFIX
+                 IMG: $IMG
+         TARGET_ARCH: $TARGET_ARCH
+            KERNCONF: $KERNCONF
+               UBLDR: $UBLDR
+                 DTB: $DTB
 
   [ CRTL-C to cancel, or ENTER to continue... ]
 EOF
