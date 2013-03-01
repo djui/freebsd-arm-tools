@@ -109,8 +109,6 @@ export TARGET_ARCH=armv6
 export MAKESYSPATH=$SRCROOT/share/mk
 export KERNCONF=RPI-B
 export UBLDRSRC=http://people.freebsd.org/~gonzo/arm/rpi/freebsd-uboot-20130201.tar.gz
-UBLDR=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/boot/arm/uboot/ubldr
-DTB=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/$KERNCONF/bcm2835-rpi-b.dtb
 
 #
 # Image Size Setup
@@ -279,6 +277,8 @@ device_tree=devtree.dat
 device_tree_address=0x100
 disable_commandline_tags=1
 __EOC__
+UBLDR=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/boot/arm/uboot/ubldr
+DTB=$(realpath $MAKEOBJDIRPREFIX)/arm.armv6/$(realpath $SRCROOT)/sys/$KERNCONF/bcm2835-rpi-b.dtb
 cp $UBLDR $MNTDIR
 cp $DTB $MNTDIR/devtree.dat
 umount $MNTDIR
