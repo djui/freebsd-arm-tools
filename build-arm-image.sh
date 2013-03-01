@@ -225,7 +225,7 @@ fi
 # Get SVN Revision (Again)
 #
 cd $SRCROOT
-NEW_SVN_REVISION=$(svn info |grep "^Revision" | awk "{print $2}")
+NEW_SVN_REVISION=$(svn info | grep "^Revision" | awk "{print $2}")
 cd $curdir
 
 if [ "${NEW_SVN_REVISION}" -ne  "${CURRENT_SVN_REVISION}" ]; then
